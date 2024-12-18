@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const axios = require("axios")
 
 app.use(bodyParser.json());
 
@@ -49,6 +50,31 @@ app.get("/orders", (req, res) => {
             throw err
         }
     })
+})
+
+app.get("/order/:id", (req, res) => {
+
+  Order.findById(req.params.id).then((order) => {
+    if(order){
+
+      axios.get("http://localhost:5555/Cus_DB" + order.customerID).then((response) => {
+        
+      var orderObject = {customerName: response.data.name, bookTitle: ''}
+
+      axios.get("http://localhost:4545/book" + order.BookID).then((respond) => {
+
+        orderObject.bookTitle = response.data.title
+        res.json(orderObject)
+      })
+
+        //console.log(response)
+      })
+
+      res.send("quick respond")
+    }else{
+      res.send("Invalid Order")
+    }
+  })
 })
 
 // Start the server
