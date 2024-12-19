@@ -58,7 +58,7 @@ app.get("/order/:id", (req, res) => {
     if(order){
 
       axios.get("http://localhost:5555/Cus_DB" + order.customerID).then((response) => {
-        
+
       var orderObject = {customerName: response.data.name, bookTitle: ''}
 
       axios.get("http://localhost:4545/book" + order.BookID).then((respond) => {
@@ -70,7 +70,7 @@ app.get("/order/:id", (req, res) => {
         //console.log(response)
       })
 
-      res.send("quick respond")
+      //res.send("quick respond")
     }else{
       res.send("Invalid Order")
     }

@@ -6,16 +6,25 @@ const mongoose = require("mongoose");
  app.use(bodyParser.json());
 
 // app.use(bodyParser.json());
-const connectDB = async () => {
-    try {
-        await mongoose.connect("mongodb+srv://dadaphirada:Aida2004_@customerservice.5uijo.mongodb.net/mydatabase?retryWrites=true&w=majority&authSource=admin");
+// const connectDB = async () => {
+//     try {
+//         await mongoose.connect("mongodb+srv://tenniskrtrkyung:networkCustomer@cluster0.jamv5.mongodb.net/");
 
-        console.log("Database connected - Customer Service");
-    } catch (err) {
-        console.error("Error connecting to the database:", err);
-    }
-};  
-connectDB();   
+//         console.log("Database connected - Customer Service");
+//     } catch (err) {
+//         console.error("Error connecting to the database:", err);
+//     }
+// };  
+// connectDB();   
+
+// MongoDB Connection
+mongoose.connect("mongodb+srv://tenniskrtrkyung:networkCustomer@cluster0.jamv5.mongodb.net/")
+  .then(() => {
+    console.log("Database connected - Customer");
+  })
+  .catch((err) => {
+    console.error("Database connection error:", err);
+  });
 
 const customerSchema = new mongoose.Schema({
     name: String,
