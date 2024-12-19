@@ -7,81 +7,77 @@ app.use(bodyParser.json());
 
 // MongoDB Connection
 mongoose.connect("mongodb+srv://tenniskrtrkyung:network@cluster0.8r3vy.mongodb.net/")
-  .then(() => {
-    console.log("Database connected - Books");
-  })
-  .catch((err) => {
-    console.error("Database connection error:", err);
-  });
+  .then(() => console.log("Database connected - Books"))
+  .catch((err) => console.error("Database connection error:", err));
 
 require("./book");
 const Book = mongoose.model("Book");
 
 
-app.get('/', (req, res) => {
-    res.send("This is the book service");
+app.get("/", (req, res) => {
+  res.send("This is the book service");
 });
 
-//add new book
+// Add a new book
 app.post("/book", async (req, res) => {
+  try {
     const newBook = {
-        title: req.body.title,
-        author: req.body.author,
-        numberPage: req.body.numberPage,
-        publisher: req.body.publisher,
+      title: req.body.title,
+      author: req.body.author,
+      numberPage: req.body.numberPage,
+      publisher: req.body.publisher,
     };
 
     const book = new Book(newBook);
+    await book.save();
 
-    try {
-        await book.save();
-        console.log("New book created");
-        res.status(201).send("New book added successfully");
-    } catch (err) {
-        console.error("Error creating book:", err);
-        res.status(500).send({ error: err.message });
-    }
+    res.status(201).json({ message: "New book added successfully", book });
+  } catch (err) {
+    console.error("Error creating book:", err);
+    res.status(500).json({ error: "Error creating book", details: err.message });
+  }
 });
 
-//get all books
-app.get("/books", (req, res) => {
+// Get all books
+app.get("/books", async (req, res) => {
+  try {
+    const books = await Book.find();
+    res.json(books);
+  } catch (err) {
+    console.error("Error fetching books:", err);
+    res.status(500).json({ error: "Error fetching books" });
+  }
+});
 
-  Book.find().then((books) => {
-      res.json(books)
-  }).catch((err) => {
-      if(err){
-          throw err
-      }
-  })
-})
+// Get a book by ID
+app.get("/book/:id", async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    res.json(book);
+  } catch (err) {
+    console.error("Error fetching book:", err);
+    res.status(500).json({ error: "Error fetching book", details: err.message });
+  }
+});
 
-app.get("/book/:id", (req, res) => {
+// Delete a book by ID
+app.delete("/book/:id", async (req, res) => {
+  try {
+    const book = await Book.findByIdAndDelete(req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    res.json({ message: "Book removed successfully", book });
+  } catch (err) {
+    console.error("Error deleting book:", err);
+    res.status(500).json({ error: "Error deleting book", details: err.message });
+  }
+});
 
-  Book.findById(req.params.id).then((book) => {
-        if(book){
-          res.json(book)
-        }else{
-          res.sendStatus(404);
-        }
-      
-  }).catch((err) => {
-      if(err){
-          throw err
-      }
-  })
-})
-
-app.delete("/book/:id", (req, res) => {
-
-  Book.findOneAndDelete(req.params.id).then(() => {
-      res.send("removed book success")
-  }).catch((err) => {
-      if(err){
-          throw err
-      }
-  })
-})
-
+// Start the server
 app.listen(4545, () => {
-    console.log("Up and Running -- books service");
+  console.log("Up and Running -- Books service");
 });

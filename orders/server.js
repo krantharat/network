@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const axios = require("axios")
+const axios = require("axios");
 
 app.use(bodyParser.json());
 
@@ -20,83 +20,57 @@ require("./Order");
 const Order = mongoose.model("Order");
 
 // Create a new order
-// app.post("/order", async (req, res) => {
-//   try {
-//     const newOrder = {
-//       CustomerID: new mongoose.Types.ObjectId(req.body.customerID),
-//       BookID: new mongoose.Types.ObjectId(req.body.BookID),
-//       initialDate: req.body.initialDate,
-//       deliveryDate: req.body.deliveryDate,
-//     };
+app.post("/order", async (req, res) => {
+  try {
+    const newOrder = {
+      CustomerID: new mongoose.Types.ObjectId(req.body.CustomerID),
+      BookID: new mongoose.Types.ObjectId(req.body.BookID),
+      initialDate: req.body.initialDate,
+      deliveryDate: req.body.deliveryDate
+    };
 
-//     const order = new Order(newOrder);
-//     await order.save();
-
-//     console.log("Order Created successfully!");
-//     res.status(201).json({ message: "Order created successfully!" });
-
-
-//   } catch (err) {
-//     console.error("Error creating order:", err);
-//     res.status(500).json({ message: "Failed to create order", error: err.message });
-//   }
-// });
-
-app.post("/order", (req,res) => {
-
-  var newOrder = {
-    CustomerID: new mongoose.Types.ObjectId(req.body.CustomerID),
-    BookID: new mongoose.Types.ObjectId(req.body.BookID),
-    initialDate: req.body.initialDate,
-    deliveryDate: req.body.deliveryDate
+    const order = new Order(newOrder);
+    await order.save();
+    res.status(201).json({ message: "Order created successfully!" });
+  } catch (err) {
+    console.error("Error creating order:", err);
+    res.status(500).json({ message: "Failed to create order", error: err.message });
   }
+});
 
-  var order = new Order(newOrder)
+// Get all orders
+app.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find();
+    res.json(orders);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res.status(500).send("Error fetching orders");
+  }
+});
 
-  order.save().then(() => {
-    res.send("Order created with success")
-  }).catch((err) => {
-    if(err){
-      throw err
+// Get order by ID
+app.get("/order/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send("Invalid Order");
     }
-  })
-})
 
-app.get("/orders", (req, res) => {
-    Order.find().then((books) => {
-        res.json(books)
-    }).catch((err) => {
-        if(err){
-            throw err
-        }
-    })
-})
+    const customerResponse = await axios.get(`http://localhost:5555/customer/${order.CustomerID}`);
+    const bookResponse = await axios.get(`http://localhost:4545/book/${order.BookID}`);
 
-app.get("/order/:id", (req, res) => {
+    const orderObject = {
+      customerName: customerResponse.data.name,
+      bookTitle: bookResponse.data.title
+    };
 
-  Order.findById(req.params.id).then((order) => {
-    if(order){
-
-      axios.get("http://localhost:5555/Cus_DB/" + order.customerID).then((response) => {
-
-      var orderObject = {customerName: response.data.name, bookTitle: ''}
-
-      axios.get("http://localhost:4545/book/" + order.BookID).then((response) => {
-
-        orderObject.bookTitle = response.data.title
-
-        res.json(orderObject)
-      })
-
-        console.log(response)
-      })
-
-      //res.send("quick respond")
-    }else{
-      res.send("Invalid Order")
-    }
-  })
-})
+    res.json(orderObject);
+  } catch (err) {
+    console.error("Error fetching order:", err.message);
+    res.status(500).send("Error fetching order details");
+  }
+});
 
 // Start the server
 app.listen(7777, () => {

@@ -1,10 +1,11 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser")  
+const bodyParser = require("body-parser");
 
 app.use(bodyParser.json());
 
+// MongoDB Connection
 mongoose.connect("mongodb+srv://tenniskrtrkyung:networkCustomer@cluster0.jamv5.mongodb.net/")
   .then(() => {
     console.log("Database connected - Customer");
@@ -17,68 +18,64 @@ mongoose.connect("mongodb+srv://tenniskrtrkyung:networkCustomer@cluster0.jamv5.m
 require("./customer");
 const Customer = mongoose.model("Customer");
 
-//create customer
-app.post("/customer", (req, res) => {
+// Create customer
+app.post("/customer", async (req, res) => {
+  try {
     const newCustomer = {
-        name: req.body.name,
-        age: req.body.age,
-        address: req.body.address
+      name: req.body.name,
+      age: req.body.age,
+      address: req.body.address,
     };
 
     const customer = new Customer(newCustomer);
-    
-    customer.save()
-        .then(() => {
-            res.send("Customer Created");
-        })
-        .catch((err) => {
-            console.error("Error creating customer:", err);
-            res.status(500).send("Error creating customer");
-        });
+    await customer.save();
+    res.status(201).send("Customer created successfully");
+  } catch (err) {
+    console.error("Error creating customer:", err);
+    res.status(500).json({ error: "Error creating customer", details: err.message });
+  }
 });
 
-//get all customer
-app.get("/customers", (req, res) => {
-    Customer.find().then((customers) => {
-        res.json(customers)
-    }).catch((err) => {
-        if(err){
-            throw err
-        }
-    })
+// Get all customers
+app.get("/customers", async (req, res) => {
+  try {
+    const customers = await Customer.find();
+    res.json(customers);
+  } catch (err) {
+    console.error("Error fetching customers:", err);
+    res.status(500).json({ error: "Error fetching customers" });
+  }
+});
 
-})
+// Get customer by ID
+app.get("/customer/:id", async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.id);
+    if (!customer) {
+      return res.status(404).send("Customer not found");
+    }
+    res.json(customer);
+  } catch (err) {
+    console.error("Error fetching customer:", err);
+    res.status(500).json({ error: "Error fetching customer", details: err.message });
+  }
+});
 
-//get customer by id
-app.get("/customer/:id", (req, res) => {
-    Customer.findById(req.params.id).then((customer) => {
-        if(customer){        
-            res.json(customer)
-        } else {
-            res.send("invalid ID")
-        }
-    }).catch((err) => {
-        if(err){
-            throw err
+// Delete customer by ID
+app.delete("/customer/:id", async (req, res) => {
+  try {
+    const result = await Customer.findByIdAndDelete(req.params.id);
+    if (!result) {
+      return res.status(404).send("Customer not found");
+    }
+    res.send("Customer deleted successfully");
+  } catch (err) {
+    console.error("Error deleting customer:", err);
+    res.status(500).json({ error: "Error deleting customer", details: err.message });
+  }
+});
 
-        }
-    })
-
-})
-
-app.delete("/customer/:id", (req, res) => {
-    Customer.findByIdAndDelete(req.params.id).then(() => {
-            res.send("Customer deleted with success")
-    }).catch((err) => {
-        if(err){
-            throw err
-        }
-    })
-
-})
-
+// Start the server
 app.listen(5555, () => {
-    console.log("up and running - Customer service");
+  console.log("Up and running - Customer service");
 });
-
-  
